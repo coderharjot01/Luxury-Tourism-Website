@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased font-sans transition-colors duration-300;
+  }
+}
+
+/* Glassmorphism custom classes */
+.glass {
+  background: rgba(250, 249, 246, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.dark .glass {
+  background: rgba(30, 37, 34, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-premium {
+  background: rgba(250, 249, 246, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(197, 168, 128, 0.25); /* Gold-ish border */
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04);
+}
+
+.dark .glass-premium {
+  background: rgba(18, 22, 20, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(197, 168, 128, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Hide scrollbars for sliders */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Custom Scrollbar for the page */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF9F6;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #121614;
+}
+::-webkit-scrollbar-thumb {
+  background: #C5A880;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3D5A80;
+}
+
+/* Custom styles for animations */
+.glow-effect {
+  box-shadow: 0 0 25px rgba(255, 140, 66, 0.2);
+}
+.dark .glow-effect {
+  box-shadow: 0 0 25px rgba(255, 140, 66, 0.1);
+}
+
+/* Custom visual styles */
+.hero-gradient {
+  background: linear-gradient(to bottom, rgba(18, 22, 20, 0.3) 0%, rgba(18, 22, 20, 0.8) 100%);
+}

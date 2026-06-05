@@ -82,65 +82,32 @@ export const Hero: React.FC<HeroProps> = ({ activeDestination, onNavigate, openB
       noiseSource.start();
       soundNodesRef.current.push(lfo, noiseSource, noiseVolume);
 
-      // --- OM CHANT DRONE (AUM) ---
-      const fundamental = 145; // 145Hz fundamental is easily reproducible on laptop/mobile speakers while remaining deep
-      const harmonics = [1, 1.5, 2, 2.5, 3]; // Rich chordal structure (octaves and perfect fifths) for a resonant vocal drone
-      const harmonicTypes: OscillatorType[] = ['sawtooth', 'sine', 'sine', 'sine', 'sine'];
+      // --- OM CHANT DRONE (AUM MP3) ---
+      const audio = new Audio('/om.mp3');
+      audio.loop = true;
+      audio.crossOrigin = 'anonymous';
+
+      // Connect HTML5 Audio element to the AudioContext
+      const audioSource = ctx.createMediaElementSource(audio);
+      const omVolume = ctx.createGain();
       
-      const omMasterGain = ctx.createGain();
-      omMasterGain.gain.setValueAtTime(0, ctx.currentTime);
-      // Gradually fade-in over 3 seconds to a highly audible level
-      omMasterGain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 3.0);
+      // Gradually fade-in over 3 seconds
+      omVolume.gain.setValueAtTime(0, ctx.currentTime);
+      omVolume.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 3.0); // 0.6 volume is rich and clear
 
-      harmonics.forEach((mult, index) => {
-        const osc = ctx.createOscillator();
-        osc.type = harmonicTypes[index] || 'sine';
-        // Detune each harmonic slightly for chorus texture
-        const detuneAmt = (Math.random() - 0.5) * 2.0;
-        osc.frequency.setValueAtTime(fundamental * mult + detuneAmt, ctx.currentTime);
-        
-        const gainNode = ctx.createGain();
-        // High volume levels for individual harmonics to ensure clarity
-        const baseVol = index === 0 ? 0.22 : index === 1 ? 0.16 : index === 2 ? 0.12 : index === 3 ? 0.08 : 0.05;
-        gainNode.gain.setValueAtTime(baseVol, ctx.currentTime);
+      audioSource.connect(omVolume);
+      omVolume.connect(ctx.destination);
 
-        // Slow LFO to modulate individual volumes for natural vocal movement
-        const lfoOsc = ctx.createOscillator();
-        lfoOsc.frequency.value = 0.2 + index * 0.08;
-        const lfoGainNode = ctx.createGain();
-        lfoGainNode.gain.value = baseVol * 0.3; // 30% volume modulation
+      audio.play().catch(err => console.warn("Audio play error", err));
 
-        lfoOsc.connect(lfoGainNode);
-        lfoGainNode.connect(gainNode.gain);
-        lfoOsc.start();
-
-        osc.connect(gainNode);
-        gainNode.connect(omMasterGain);
-
-        osc.start();
-        soundNodesRef.current.push(osc, lfoOsc, lfoGainNode);
-      });
-
-      // Pass through a resonant bandpass or lowpass filter to form the A-U-M vowel sounds
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.Q.value = 6.5; // highly resonant vowel quality
-      filter.frequency.setValueAtTime(480, ctx.currentTime);
-
-      // Modulate filter frequency to transition from A -> U -> M vowels slowly (breath cycle)
-      const filterLfo = ctx.createOscillator();
-      filterLfo.frequency.value = 0.08; // 12.5 seconds per breath cycle
-      const filterLfoGain = ctx.createGain();
-      filterLfoGain.gain.value = 180; // modulates between 300Hz and 660Hz
-
-      filterLfo.connect(filterLfoGain);
-      filterLfoGain.connect(filter.frequency);
-      
-      filterLfo.start();
-
-      omMasterGain.connect(filter);
-      filter.connect(ctx.destination);
-      soundNodesRef.current.push(filterLfo, filterLfoGain, filter, omMasterGain);
+      // Stop handle to pause the MP3 when ambient sound is turned off
+      const audioNode = {
+        stop: () => {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+      };
+      soundNodesRef.current.push(audioSource, omVolume, audioNode);
 
       // --- TEMPLE CHIME TRIGGER (Tibetan Bowl sound) ---
       const triggerChime = () => {

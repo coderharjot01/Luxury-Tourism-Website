@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Volume2, VolumeX, Compass, CalendarRange } from 'lucide-react';
 
+const AUDIO_SESSION_ID = Date.now();
+
+
 interface HeroProps {
   activeDestination: 'rishikesh' | 'agra' | 'goa' | 'delhi';
   onNavigate: (sectionId: string) => void;
@@ -83,7 +86,7 @@ export const Hero: React.FC<HeroProps> = ({ activeDestination, onNavigate, openB
       soundNodesRef.current.push(lfo, noiseSource, noiseVolume);
 
       // --- OM CHANT DRONE (AUM MP3) ---
-      const audio = new Audio('/om.mp3');
+      const audio = new Audio(`/om.mp3?v=${AUDIO_SESSION_ID}`);
       audio.loop = true;
       audio.crossOrigin = 'anonymous';
 

@@ -33,7 +33,7 @@ export const Hero: React.FC<HeroProps> = ({ activeDestination, onNavigate, openB
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Web Audio API Synthesizer for River & Temple Bells
+  // Web Audio API Synthesizer for River, Temple Bells, and Om (AUM) Chant
   const startAmbience = () => {
     try {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -62,7 +62,9 @@ export const Hero: React.FC<HeroProps> = ({ activeDestination, onNavigate, openB
       noiseFilter.Q.value = 1.0;
 
       const noiseVolume = ctx.createGain();
-      noiseVolume.gain.setValueAtTime(0.04, ctx.currentTime); // very subtle
+      // Gradual 3-second fade-in for river wind
+      noiseVolume.gain.setValueAtTime(0, ctx.currentTime);
+      noiseVolume.gain.linearRampToValueAtTime(0.04, ctx.currentTime + 3.0);
 
       // LFO to modulate filter frequency (representing flowing river gusts)
       const lfo = ctx.createOscillator();
@@ -80,20 +82,80 @@ export const Hero: React.FC<HeroProps> = ({ activeDestination, onNavigate, openB
       noiseSource.start();
       soundNodesRef.current.push(lfo, noiseSource, noiseVolume);
 
+      // --- OM CHANT DRONE (AUM) ---
+      const fundamental = 120; // 120Hz fundamental is a very rich male chest voice pitch
+      const harmonics = [1, 2, 3, 4, 5];
+      const harmonicTypes: OscillatorType[] = ['sawtooth', 'sine', 'sine', 'sine', 'sine'];
+      
+      const omMasterGain = ctx.createGain();
+      omMasterGain.gain.setValueAtTime(0, ctx.currentTime);
+      // Gradually fade-in over 3 seconds
+      omMasterGain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 3.0);
+
+      harmonics.forEach((mult, index) => {
+        const osc = ctx.createOscillator();
+        osc.type = harmonicTypes[index];
+        // Detune each harmonic slightly for chorus texture
+        const detuneAmt = (Math.random() - 0.5) * 1.5;
+        osc.frequency.setValueAtTime(fundamental * mult + detuneAmt, ctx.currentTime);
+        
+        const gainNode = ctx.createGain();
+        // Attenuate higher harmonics
+        const baseVol = index === 0 ? 0.04 : index === 1 ? 0.03 : index === 2 ? 0.02 : index === 3 ? 0.015 : 0.01;
+        gainNode.gain.setValueAtTime(baseVol, ctx.currentTime);
+
+        // Slow LFO to modulate individual volumes for natural vocal movement
+        const lfoOsc = ctx.createOscillator();
+        lfoOsc.frequency.value = 0.2 + index * 0.08;
+        const lfoGainNode = ctx.createGain();
+        lfoGainNode.gain.value = baseVol * 0.25;
+
+        lfoOsc.connect(lfoGainNode);
+        lfoGainNode.connect(gainNode.gain);
+        lfoOsc.start();
+
+        osc.connect(gainNode);
+        gainNode.connect(omMasterGain);
+
+        osc.start();
+        soundNodesRef.current.push(osc, lfoOsc, lfoGainNode);
+      });
+
+      // Pass through a resonant bandpass or lowpass filter to form the A-U-M vowel sounds
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.Q.value = 6.0; // resonant vowel quality
+      filter.frequency.setValueAtTime(350, ctx.currentTime);
+
+      // Modulate filter frequency to transition from A -> U -> M vowels slowly (breath cycle)
+      const filterLfo = ctx.createOscillator();
+      filterLfo.frequency.value = 0.08; // 12.5 seconds per breath cycle
+      const filterLfoGain = ctx.createGain();
+      filterLfoGain.gain.value = 130; // modulates between 220Hz and 480Hz
+
+      filterLfo.connect(filterLfoGain);
+      filterLfoGain.connect(filter.frequency);
+      
+      filterLfo.start();
+
+      omMasterGain.connect(filter);
+      filter.connect(ctx.destination);
+      soundNodesRef.current.push(filterLfo, filterLfoGain, filter, omMasterGain);
+
       // --- TEMPLE CHIME TRIGGER (Tibetan Bowl sound) ---
       const triggerChime = () => {
         if (!audioContextRef.current || audioContextRef.current.state === 'suspended') return;
         const now = ctx.currentTime;
         
         // Multi-harmonic frequencies for a rich bell sound (e.g. 150Hz, 300Hz, 440Hz, 660Hz)
-        const fundamental = 130 + Math.random() * 40; // Random pitch
-        const harmonics = [1, 2, 2.76, 3.4, 4.2];
+        const fundamentalChime = 130 + Math.random() * 40; // Random pitch
+        const chimeHarmonics = [1, 2, 2.76, 3.4, 4.2];
         const gains = [0.15, 0.08, 0.05, 0.03, 0.01];
 
-        harmonics.forEach((mult, index) => {
+        chimeHarmonics.forEach((mult, index) => {
           const osc = ctx.createOscillator();
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(fundamental * mult, now);
+          osc.frequency.setValueAtTime(fundamentalChime * mult, now);
 
           const gainNode = ctx.createGain();
           gainNode.gain.setValueAtTime(0, now);
@@ -151,6 +213,57 @@ export const Hero: React.FC<HeroProps> = ({ activeDestination, onNavigate, openB
       setIsPlayingSound(true);
     }
   };
+
+  // Autoplay audio gradually after 2 seconds of page load (with user-interaction bypass)
+  useEffect(() => {
+    let timer: any;
+    let allowedToPlay = false;
+
+    const startAudio = () => {
+      if (!audioContextRef.current) {
+        startAmbience();
+        setIsPlayingSound(true);
+      } else if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+        setIsPlayingSound(true);
+      }
+    };
+
+    const handleInteraction = () => {
+      if (allowedToPlay) {
+        startAudio();
+        cleanupListeners();
+      }
+    };
+
+    const cleanupListeners = () => {
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('scroll', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+    };
+
+    timer = setTimeout(() => {
+      allowedToPlay = true;
+      startAudio();
+      
+      setTimeout(() => {
+        if (audioContextRef.current && audioContextRef.current.state === 'running') {
+          cleanupListeners();
+        }
+      }, 100);
+    }, 2000);
+
+    window.addEventListener('click', handleInteraction);
+    window.addEventListener('scroll', handleInteraction);
+    window.addEventListener('touchstart', handleInteraction);
+    window.addEventListener('keydown', handleInteraction);
+
+    return () => {
+      clearTimeout(timer);
+      cleanupListeners();
+    };
+  }, []);
 
   // Clean up sound on unmount
   useEffect(() => {

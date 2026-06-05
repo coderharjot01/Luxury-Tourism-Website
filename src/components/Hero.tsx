@@ -83,32 +83,32 @@ export const Hero: React.FC<HeroProps> = ({ activeDestination, onNavigate, openB
       soundNodesRef.current.push(lfo, noiseSource, noiseVolume);
 
       // --- OM CHANT DRONE (AUM) ---
-      const fundamental = 120; // 120Hz fundamental is a very rich male chest voice pitch
-      const harmonics = [1, 2, 3, 4, 5];
+      const fundamental = 145; // 145Hz fundamental is easily reproducible on laptop/mobile speakers while remaining deep
+      const harmonics = [1, 1.5, 2, 2.5, 3]; // Rich chordal structure (octaves and perfect fifths) for a resonant vocal drone
       const harmonicTypes: OscillatorType[] = ['sawtooth', 'sine', 'sine', 'sine', 'sine'];
       
       const omMasterGain = ctx.createGain();
       omMasterGain.gain.setValueAtTime(0, ctx.currentTime);
-      // Gradually fade-in over 3 seconds
-      omMasterGain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 3.0);
+      // Gradually fade-in over 3 seconds to a highly audible level
+      omMasterGain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 3.0);
 
       harmonics.forEach((mult, index) => {
         const osc = ctx.createOscillator();
-        osc.type = harmonicTypes[index];
+        osc.type = harmonicTypes[index] || 'sine';
         // Detune each harmonic slightly for chorus texture
-        const detuneAmt = (Math.random() - 0.5) * 1.5;
+        const detuneAmt = (Math.random() - 0.5) * 2.0;
         osc.frequency.setValueAtTime(fundamental * mult + detuneAmt, ctx.currentTime);
         
         const gainNode = ctx.createGain();
-        // Attenuate higher harmonics
-        const baseVol = index === 0 ? 0.04 : index === 1 ? 0.03 : index === 2 ? 0.02 : index === 3 ? 0.015 : 0.01;
+        // High volume levels for individual harmonics to ensure clarity
+        const baseVol = index === 0 ? 0.22 : index === 1 ? 0.16 : index === 2 ? 0.12 : index === 3 ? 0.08 : 0.05;
         gainNode.gain.setValueAtTime(baseVol, ctx.currentTime);
 
         // Slow LFO to modulate individual volumes for natural vocal movement
         const lfoOsc = ctx.createOscillator();
         lfoOsc.frequency.value = 0.2 + index * 0.08;
         const lfoGainNode = ctx.createGain();
-        lfoGainNode.gain.value = baseVol * 0.25;
+        lfoGainNode.gain.value = baseVol * 0.3; // 30% volume modulation
 
         lfoOsc.connect(lfoGainNode);
         lfoGainNode.connect(gainNode.gain);
@@ -124,14 +124,14 @@ export const Hero: React.FC<HeroProps> = ({ activeDestination, onNavigate, openB
       // Pass through a resonant bandpass or lowpass filter to form the A-U-M vowel sounds
       const filter = ctx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.Q.value = 6.0; // resonant vowel quality
-      filter.frequency.setValueAtTime(350, ctx.currentTime);
+      filter.Q.value = 6.5; // highly resonant vowel quality
+      filter.frequency.setValueAtTime(480, ctx.currentTime);
 
       // Modulate filter frequency to transition from A -> U -> M vowels slowly (breath cycle)
       const filterLfo = ctx.createOscillator();
       filterLfo.frequency.value = 0.08; // 12.5 seconds per breath cycle
       const filterLfoGain = ctx.createGain();
-      filterLfoGain.gain.value = 130; // modulates between 220Hz and 480Hz
+      filterLfoGain.gain.value = 180; // modulates between 300Hz and 660Hz
 
       filterLfo.connect(filterLfoGain);
       filterLfoGain.connect(filter.frequency);

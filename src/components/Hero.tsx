@@ -186,20 +186,28 @@ export const Hero: React.FC<HeroProps> = ({ activeDestination, onNavigate, openB
       ref={containerRef}
       className="relative w-full h-screen overflow-hidden flex items-center justify-center bg-charcoal"
     >
-      {/* Background Image Panel (Immersive Drone Shot Sim) */}
+      {/* Background Image Panel - Seamless Scrolling Panoramic Travel Scene */}
       <motion.div 
-        key={activeDestination}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.85 }}
-        transition={{ duration: 1 }}
-        className="absolute inset-0 bg-cover bg-center select-none animate-pulse-slow"
+        className="absolute inset-0 select-none overflow-hidden"
         style={{
-          backgroundImage: `url('${heroDetails.bg}')`,
           y: yBg,
           x: mousePosition.x * 0.4,
-          scale: 1.1
+          scale: 1.15
         }}
-      />
+      >
+        <div className="absolute inset-0 flex w-[200%] h-full animate-scroll-marquee">
+          <img 
+            src="/travel_bg.png" 
+            alt="Panoramic Travel Background" 
+            className="w-1/2 h-full object-cover shrink-0 select-none pointer-events-none brightness-[0.75] contrast-[1.05]" 
+          />
+          <img 
+            src="/travel_bg.png" 
+            alt="Panoramic Travel Background" 
+            className="w-1/2 h-full object-cover shrink-0 select-none pointer-events-none brightness-[0.75] contrast-[1.05]" 
+          />
+        </div>
+      </motion.div>
 
       {/* Dark overlay for text readability */}
       <div className="absolute inset-0 hero-gradient z-10" />

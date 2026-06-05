@@ -79,3 +79,17 @@
 .hero-gradient {
   background: linear-gradient(to bottom, rgba(18, 22, 20, 0.3) 0%, rgba(18, 22, 20, 0.8) 100%);
 }
+
+/* Seamless background scrolling marquee */
+@keyframes scroll-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-scroll-marquee {
+  animation: scroll-marquee 100s linear infinite;
+}
